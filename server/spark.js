@@ -1,15 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { Configuration, OpenAIApi } = require('openai');
+// const { Configuration, OpenAIApi } = require('openai');
 
-const openai = new OpenAIApi(new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-}));
+// const openai = new OpenAIApi(new Configuration({
+//   apiKey: process.env.OPENAI_API_KEY,
+// }));
 
 router.post('/', async (req, res) => {
-  const { message, userTier = 'free', zip = null, coords = null } = req.body;
+  // const { message, userTier = 'free', zip = null, coords = null } = req.body;
 
   try {
+    // TEMPORARY: Bypass OpenAI and return DIY response directly
+    const reply = "DIY: Screwdriver, Multimeter - Turn off power > Remove the panel > Check for loose wires";
+
+    res.json({ reply });
+
+    // 🔙 To restore OpenAI later, uncomment everything above and below
+    /*
     let prompt = '';
     if (userTier === 'pro') {
       prompt = `You are Spark, a technical HVAC assistant for trained technicians. Answer in detail:\n\n${message}`;
@@ -28,6 +35,7 @@ router.post('/', async (req, res) => {
 
     const reply = response.data.choices[0].message.content;
     res.json({ reply });
+    */
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Spark is currently unavailable.' });
