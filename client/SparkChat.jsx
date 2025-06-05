@@ -1,61 +1,93 @@
 import React, { useState } from 'react';
+import CompanyCard from './components/CompanyCard';
 
-const SparkChat = ({ userTier = 'free' }) => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+const SparkChat = () => {
+  const [message, setMessage] = useState('');
+  const [chatLog, setChatLog] = useState([]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!message.trim()) return;
 
-    const newMessage = { role: 'user', content: input };
-    setMessages([...messages, newMessage]);
+    const userMessage = { from: 'user', text: message };
+    setChatLog([...chatLog, userMessage]);
+    setMessage('');
 
-    setInput('');
+    try {
+      const response = await fetch('/api/spark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          userTier: 'free', // or 'pro'
+          zip: '90210' // Replace with actual zip input or location
+        }),
+      });
 
-    const response = await fetch('/api/spark', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input, userTier }),
-    });
+      const data = await response.json();
+      const sparkReply = {
+        from: 'spark',
+        reply: data.reply,
+        companies: data.companies || []
+      };
 
-    const data = await response.json();
-    const botReply = { role: 'assistant', content: data.reply };
-    setMessages((prev) => [...prev, botReply]);
-  };
-
-  const handleSave = () => {
-    const transcript = messages.map(m => `${m.role === 'user' ? 'You' : 'Spark'}: ${m.content}`).join('\n\n');
-    alert('Feature for Pro users only: Save and send this transcript via email or history.');
-    console.log('Transcript:\n', transcript);
-    // Add future logic here to store or email transcript
+      setChatLog((prev) => [...prev, sparkReply]);
+    } catch (err) {
+      console.error(err);
+      const errorReply = {
+        from: 'spark',
+        reply: 'Something went wrong. Spark is unavailable right now.',
+        companies: []
+      };
+      setChatLog((prev) => [...prev, errorReply]);
+    }
   };
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>Spark AI Assistant</h2>
+      <h2>Chat with Spark</h2>
 
-      <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px' }}>
-        {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '10px' }}>
-            <strong>{msg.role === 'user' ? 'You' : 'Spark'}:</strong> {msg.content}
+      <div style={{ marginBottom: '20px' }}>
+        {chatLog.map((msg, index) => (
+          <div key={index} style={{ marginBottom: '16px' }}>
+            {msg.from === 'user' && (
+              <div><strong>You:</strong> {msg.text}</div>
+            )}
+
+            {msg.from === 'spark' && (
+              <div>
+                <strong>Spark:</strong>
+                <p>{msg.reply}</p>
+
+                {msg.companies?.length > 0 && (
+                  <div style={{ marginTop: '12px' }}>
+                    <h4>Recommended HVAC Companies:</h4>
+                    {msg.companies.map((company, i) => (
+                      <CompanyCard
+                        key={i}
+                        name={company.name}
+                        address={company.address}
+                        website={company.website}
+                        isVerified={company.verifiedPro}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       <input
         type="text"
-        placeholder="Type your message..."
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        style={{ width: '80%', padding: '10px', marginTop: '10px' }}
+        placeholder="Type your question..."
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        style={{ width: '80%', padding: '8px' }}
       />
-      <button onClick={sendMessage} style={{ marginLeft: '10px' }}>Send</button>
-
-      {userTier === 'pro' && (
-        <button onClick={handleSave} style={{ display: 'block', marginTop: '15px' }}>
-          Save Conversation
-        </button>
-      )}
+      <button onClick={handleSend} style={{ padding: '8px 16px', marginLeft: '10px' }}>
+        Send
+      </button>
     </div>
   );
 };
