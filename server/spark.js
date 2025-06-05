@@ -1,27 +1,52 @@
-let prompt = '';
+const express = require('express');
+const router = express.Router();
+const { Configuration, OpenAIApi } = require('openai');
+const { getFirestore, doc, getDoc } = require('firebase-admin/firestore');
 
-if (userTier === 'pro') {
-  prompt = `
-You are Spark, a technical HVAC assistant for trained technicians. 
-Provide accurate diagnostics, detailed steps, and possible causes based on user input.
+// Ensure Firebase Admin is initialized elsewhere (e.g. in server/firebase.js)
+const openai = new OpenAIApi(new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+}));
 
-Whenever possible, include a link to a trustworthy repair guide or instructional video 
-(e.g., from manufacturers, YouTube HVAC channels, or online manuals) to help guide the repair.
+router.post('/', async (req, res) => {
+  const { message, userTier = 'free', zip = null, coords = null } = req.body;
 
-Respond clearly and directly:
+  try {
+    const db = getFirestore();
+    const configRef = doc(db, 'config', 'spark');
+    const configSnap = await getDoc(configRef);
 
-Message:
-${message}
-`;
-} else {
-  prompt = `
-You are Spark, a friendly AI assistant for homeowners with little or no HVAC knowledge. 
-Avoid technical jargon. Answer clearly, offering helpful guidance.
+    if (!configSnap.exists()) {
+      return res.status(500).json({ error: 'Missing Spark config in Firestore.' });
+    }
 
-Whenever you give a suggestion, follow it with a link to a helpful DIY video or article (if available). 
-Keep answers simple but supportive.
+    const config = configSnap.data();
 
-Question:
-${message}
-`;
-}
+    let prompt = '';
+    if (userTier === 'pro') {
+      prompt = config.proPrompt || 'You are a professional HVAC assistant.';
+    } else {
+      prompt = config.freePrompt || 'You are a friendly HVAC assistant.';
+    }
+
+    if (zip || coords) {
+      prompt += `\n\nSuggest up to ${config.suggestLimit || 3} nearby HVAC companies.`;
+      if (userTier === 'pro' && config.proLabel) {
+        prompt += ` Prioritize companies labeled "${config.proLabel}".`;
+      }
+    }
+
+    const response = await openai.createChatCompletion({
+      model: "gpt-4",
+      messages: [{ role: "user", content: prompt + "\n\n" + message }],
+    });
+
+    const reply = response.data.choices[0].message.content;
+    res.json({ reply });
+  } catch (err) {
+    console.error('Spark Error:', err);
+    res.status(500).json({ error: 'Spark is currently unavailable.' });
+  }
+});
+
+module.exports = router;
