@@ -31,7 +31,7 @@ const UserTierPanel = ({ userTier, setUserTier, zip, setZip, onProPage }) => {
 
       {userTier === 'pro' && (
         <div style={{ marginTop: '10px' }}>
-          <button onClick={onProPage}>Go to Pro Page</button>
+          <button onClick={onProPage}>Tech Login</button>
         </div>
       )}
     </div>
