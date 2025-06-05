@@ -8,7 +8,7 @@ const openai = new OpenAIApi(new Configuration({
 }));
 
 router.post('/', async (req, res) => {
-  const { message, userTier = 'free', zip = null, coords = null } = req.body;
+  const { message, userTier = 'free', zip = null } = req.body;
 
   let suggestions = [];
   if (zip) {
@@ -28,18 +28,16 @@ router.post('/', async (req, res) => {
       messages: [{ role: "user", content: prompt }],
     });
 
-    let reply = response.data.choices[0].message.content;
+    const reply = response.data.choices[0].message.content;
 
-    if (suggestions.length > 0) {
-      reply += `\n\nNearby HVAC companies:\n`;
-      suggestions.forEach((company, i) => {
-        reply += `${i + 1}. ${company.name} - ${company.address}`;
-        if (company.website) reply += ` (${company.website})`;
-        reply += '\n';
-      });
-    }
+    const companies = suggestions.map((place) => ({
+      name: place.name,
+      address: place.address,
+      website: place.website || null,
+      verifiedPro: place.name?.toLowerCase().includes('smartflow') || false // Temporary way to flag Pro tier
+    }));
 
-    res.json({ reply });
+    res.json({ reply, companies });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Spark is currently unavailable.' });
