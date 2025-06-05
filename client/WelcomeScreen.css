@@ -1,0 +1,36 @@
+.welcome-container {
+  background: linear-gradient(to bottom, #87CEEB, #ffffff);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.app-title {
+  font-size: 48px;
+  font-weight: bold;
+  color: #333;
+  margin-top: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.shield {
+  position: absolute;
+  top: 20%;
+  width: 150px;
+  height: 180px;
+  background: radial-gradient(circle, #ff6347 0%, #87CEEB 80%);
+  border-radius: 50% 50% 45% 45% / 55% 55% 45% 45%;
+  box-shadow: 0 0 12px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.hvac-icon {
+  font-size: 40px;
+  color: #f8f8f8;
+  text-align: center;
+  padding-top: 60px;
+}
