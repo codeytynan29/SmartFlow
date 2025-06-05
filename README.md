@@ -16,8 +16,3 @@ This is the initial Spark AI assistant setup for SmartFlow.
 cd server
 npm install
 node spark.js
-4. Scroll down and tap **Commit changes**
-
----
-
-✅ Once this is done, your repo is fully set up and clean. Let me know, and we’ll move on to running Spark online from your phone using Replit (no computer needed). Ready when you are.
