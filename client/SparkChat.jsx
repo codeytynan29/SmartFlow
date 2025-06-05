@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import './SparkChat.css';
 import DIYPanel from './DIYPanel';
+import UserTierPanel from './UserTierPanel';
+import TechLogin from './TechLogin';
 
 const SparkChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [diyInfo, setDiyInfo] = useState(null);
+  const [userTier, setUserTier] = useState('free');
+  const [zip, setZip] = useState('');
+  const [showTechLogin, setShowTechLogin] = useState(false);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -18,12 +23,12 @@ const SparkChat = () => {
       const response = await fetch('http://localhost:3001/api/spark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: input, userTier, zip }),
       });
+
       const data = await response.json();
       const reply = data.reply;
 
-      // Look for DIY tag
       if (reply.startsWith("DIY:")) {
         const [_, toolPart, stepPart] = reply.split(/DIY:|\-|\>/g);
         const tools = toolPart?.split(',').map(t => t.trim()) || [];
@@ -39,8 +44,20 @@ const SparkChat = () => {
     }
   };
 
+  if (showTechLogin) {
+    return <TechLogin onBack={() => setShowTechLogin(false)} />;
+  }
+
   return (
     <div className="spark-chat-window">
+      <UserTierPanel
+        userTier={userTier}
+        setUserTier={setUserTier}
+        zip={zip}
+        setZip={setZip}
+        onProPage={() => setShowTechLogin(true)}
+      />
+
       <div className="spark-header">Spark</div>
       <div className="spark-messages">
         {messages.map((msg, i) => (
@@ -50,6 +67,7 @@ const SparkChat = () => {
         ))}
         {diyInfo && <DIYPanel tools={diyInfo.tools} steps={diyInfo.steps} />}
       </div>
+
       <div className="spark-input">
         <input
           value={input}
