@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
-import WelcomeScreen from './WelcomeScreen';
-import SparkChat from './SparkChat';
+import TechLogin from './TechLogin';
+import HomeDashboard from './HomeDashboard';
+import ProDashboard from './ProDashboard';
+import UserTierPanel from './UserTierPanel';
 
-const App = () => {
-  const [showChat, setShowChat] = useState(false);
+function App() {
+  const [userType, setUserType] = useState(null); // 'home' or 'pro'
 
-  return (
-    <>
-      {showChat ? (
-        <SparkChat />
-      ) : (
-        <div onClick={() => setShowChat(true)}>
-          <WelcomeScreen />
-        </div>
-      )}
-    </>
-  );
-};
+  const handleHomeLogin = () => setUserType('home');
+  const handleProLogin = () => setUserType('pro');
+  const handleLogout = () => setUserType(null);
+
+  if (userType === 'home') return <HomeDashboard onLogout={handleLogout} />;
+  if (userType === 'pro') return <ProDashboard onLogout={handleLogout} />;
+
+  return <UserTierPanel onHomeLogin={handleHomeLogin} onProLogin={handleProLogin} />;
+}
 
 export default App;
