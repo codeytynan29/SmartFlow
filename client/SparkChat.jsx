@@ -1,81 +1,61 @@
 import React, { useState } from 'react';
-import './SparkChat.css';
-import DIYPanel from './DIYPanel';
-import UserTierPanel from './UserTierPanel';
-import TechLogin from './TechLogin';
 
-const SparkChat = () => {
+const SparkChat = ({ userTier = 'free' }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [diyInfo, setDiyInfo] = useState(null);
-  const [userTier, setUserTier] = useState('free');
-  const [zip, setZip] = useState('');
-  const [showTechLogin, setShowTechLogin] = useState(false);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMsg = { text: input, sender: 'user' };
-    setMessages(prev => [...prev, userMsg]);
+    const newMessage = { role: 'user', content: input };
+    setMessages([...messages, newMessage]);
+
     setInput('');
 
-    try {
-      const response = await fetch('http://localhost:3001/api/spark', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, userTier, zip }),
-      });
+    const response = await fetch('/api/spark', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: input, userTier }),
+    });
 
-      const data = await response.json();
-      const reply = data.reply;
-
-      if (reply.startsWith("DIY:")) {
-        const [_, toolPart, stepPart] = reply.split(/DIY:|\-|\>/g);
-        const tools = toolPart?.split(',').map(t => t.trim()) || [];
-        const steps = stepPart?.split('>').map(s => s.trim()) || [];
-        setDiyInfo({ tools, steps });
-      } else {
-        setDiyInfo(null);
-      }
-
-      setMessages(prev => [...prev, { text: reply, sender: 'spark' }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { text: 'Error getting response.', sender: 'spark' }]);
-    }
+    const data = await response.json();
+    const botReply = { role: 'assistant', content: data.reply };
+    setMessages((prev) => [...prev, botReply]);
   };
 
-  if (showTechLogin) {
-    return <TechLogin onBack={() => setShowTechLogin(false)} />;
-  }
+  const handleSave = () => {
+    const transcript = messages.map(m => `${m.role === 'user' ? 'You' : 'Spark'}: ${m.content}`).join('\n\n');
+    alert('Feature for Pro users only: Save and send this transcript via email or history.');
+    console.log('Transcript:\n', transcript);
+    // Add future logic here to store or email transcript
+  };
 
   return (
-    <div className="spark-chat-window">
-      <UserTierPanel
-        userTier={userTier}
-        setUserTier={setUserTier}
-        zip={zip}
-        setZip={setZip}
-        onProPage={() => setShowTechLogin(true)}
-      />
+    <div style={{ padding: '20px' }}>
+      <h2>Spark AI Assistant</h2>
 
-      <div className="spark-header">Spark</div>
-      <div className="spark-messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`message ${msg.sender}`}>
-            {msg.text}
+      <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px' }}>
+        {messages.map((msg, index) => (
+          <div key={index} style={{ marginBottom: '10px' }}>
+            <strong>{msg.role === 'user' ? 'You' : 'Spark'}:</strong> {msg.content}
           </div>
         ))}
-        {diyInfo && <DIYPanel tools={diyInfo.tools} steps={diyInfo.steps} />}
       </div>
 
-      <div className="spark-input">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask me anything..."
-        />
-        <button onClick={sendMessage}>Send</button>
-      </div>
+      <input
+        type="text"
+        placeholder="Type your message..."
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        style={{ width: '80%', padding: '10px', marginTop: '10px' }}
+      />
+      <button onClick={sendMessage} style={{ marginLeft: '10px' }}>Send</button>
+
+      {userTier === 'pro' && (
+        <button onClick={handleSave} style={{ display: 'block', marginTop: '15px' }}>
+          Save Conversation
+        </button>
+      )}
     </div>
   );
 };
