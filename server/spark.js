@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { Configuration, OpenAIApi } = require('openai');
-const { getFirestore, doc, getDoc } = require('firebase-admin/firestore');
+const { searchHVACCompanies } = require('./placesHelper');
 
-// Ensure Firebase Admin is initialized elsewhere (e.g. in server/firebase.js)
 const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 }));
@@ -11,40 +10,38 @@ const openai = new OpenAIApi(new Configuration({
 router.post('/', async (req, res) => {
   const { message, userTier = 'free', zip = null, coords = null } = req.body;
 
+  let suggestions = [];
+  if (zip) {
+    suggestions = await searchHVACCompanies(zip);
+  }
+
   try {
-    const db = getFirestore();
-    const configRef = doc(db, 'config', 'spark');
-    const configSnap = await getDoc(configRef);
-
-    if (!configSnap.exists()) {
-      return res.status(500).json({ error: 'Missing Spark config in Firestore.' });
-    }
-
-    const config = configSnap.data();
-
     let prompt = '';
     if (userTier === 'pro') {
-      prompt = config.proPrompt || 'You are a professional HVAC assistant.';
+      prompt = `You are Spark, a technical HVAC assistant for trained technicians. Answer in detail:\n\n${message}`;
     } else {
-      prompt = config.freePrompt || 'You are a friendly HVAC assistant.';
-    }
-
-    if (zip || coords) {
-      prompt += `\n\nSuggest up to ${config.suggestLimit || 3} nearby HVAC companies.`;
-      if (userTier === 'pro' && config.proLabel) {
-        prompt += ` Prioritize companies labeled "${config.proLabel}".`;
-      }
+      prompt = `You are Spark, a friendly AI assistant for homeowners. Avoid jargon. Question:\n\n${message}`;
     }
 
     const response = await openai.createChatCompletion({
       model: "gpt-4",
-      messages: [{ role: "user", content: prompt + "\n\n" + message }],
+      messages: [{ role: "user", content: prompt }],
     });
 
-    const reply = response.data.choices[0].message.content;
+    let reply = response.data.choices[0].message.content;
+
+    if (suggestions.length > 0) {
+      reply += `\n\nNearby HVAC companies:\n`;
+      suggestions.forEach((company, i) => {
+        reply += `${i + 1}. ${company.name} - ${company.address}`;
+        if (company.website) reply += ` (${company.website})`;
+        reply += '\n';
+      });
+    }
+
     res.json({ reply });
   } catch (err) {
-    console.error('Spark Error:', err);
+    console.error(err);
     res.status(500).json({ error: 'Spark is currently unavailable.' });
   }
 });
