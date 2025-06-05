@@ -1,45 +1,27 @@
-const express = require('express');
-const router = express.Router();
-// const { Configuration, OpenAIApi } = require('openai');
+let prompt = '';
 
-// const openai = new OpenAIApi(new Configuration({
-//   apiKey: process.env.OPENAI_API_KEY,
-// }));
+if (userTier === 'pro') {
+  prompt = `
+You are Spark, a technical HVAC assistant for trained technicians. 
+Provide accurate diagnostics, detailed steps, and possible causes based on user input.
 
-router.post('/', async (req, res) => {
-  // const { message, userTier = 'free', zip = null, coords = null } = req.body;
+Whenever possible, include a link to a trustworthy repair guide or instructional video 
+(e.g., from manufacturers, YouTube HVAC channels, or online manuals) to help guide the repair.
 
-  try {
-    // TEMPORARY: Bypass OpenAI and return DIY response directly
-    const reply = "DIY: Screwdriver, Multimeter - Turn off power > Remove the panel > Check for loose wires";
+Respond clearly and directly:
 
-    res.json({ reply });
+Message:
+${message}
+`;
+} else {
+  prompt = `
+You are Spark, a friendly AI assistant for homeowners with little or no HVAC knowledge. 
+Avoid technical jargon. Answer clearly, offering helpful guidance.
 
-    // 🔙 To restore OpenAI later, uncomment everything above and below
-    /*
-    let prompt = '';
-    if (userTier === 'pro') {
-      prompt = `You are Spark, a technical HVAC assistant for trained technicians. Answer in detail:\n\n${message}`;
-    } else {
-      prompt = `You are Spark, a friendly AI assistant for homeowners. Avoid jargon. Question:\n\n${message}`;
-    }
+Whenever you give a suggestion, follow it with a link to a helpful DIY video or article (if available). 
+Keep answers simple but supportive.
 
-    if (zip || coords) {
-      prompt += `\n\nAlso suggest 2-3 nearby HVAC companies if needed.`;
-    }
-
-    const response = await openai.createChatCompletion({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
-    */
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Spark is currently unavailable.' });
-  }
-});
-
-module.exports = router;
+Question:
+${message}
+`;
+}
