@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
-import TechLogin from './TechLogin';
-import HomeDashboard from './HomeDashboard';
-import ProDashboard from './ProDashboard';
-import UserTierPanel from './UserTierPanel';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './Home'; // Your existing home component
+import SparkChat from './SparkChat'; // AI assistant
+import TechLogin from './TechLogin'; // Tech login
+import CompanyLogin from './CompanyLogin'; // 👈 Newly added
 
 function App() {
-  const [userType, setUserType] = useState(null); // 'home' or 'pro'
-
-  const handleHomeLogin = () => setUserType('home');
-  const handleProLogin = () => setUserType('pro');
-  const handleLogout = () => setUserType(null);
-
-  if (userType === 'home') return <HomeDashboard onLogout={handleLogout} />;
-  if (userType === 'pro') return <ProDashboard onLogout={handleLogout} />;
-
-  return <UserTierPanel onHomeLogin={handleHomeLogin} onProLogin={handleProLogin} />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/spark" element={<SparkChat />} />
+        <Route path="/tech-login" element={<TechLogin />} />
+        <Route path="/company-login" element={<CompanyLogin />} /> {/* 👈 New Route */}
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
