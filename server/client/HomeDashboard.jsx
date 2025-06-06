@@ -5,7 +5,7 @@ import Calendar from './Calendar';
 import DailySchedule from './DailySchedule';
 
 const HomeDashboard = ({ onLogout }) => {
-  const [view, setView] = useState('dashboard');
+  const [view, setView] = useState('chat');
   const [selectedDate, setSelectedDate] = useState(null);
 
   const handleOpenDay = (date) => {
@@ -13,52 +13,60 @@ const HomeDashboard = ({ onLogout }) => {
     setView('day');
   };
 
-  if (view === 'chat') return <SparkChat userTier="free" />;
-  if (view === 'inbox') return <MessageInbox onBack={() => setView('dashboard')} />;
-  if (view === 'calendar') return <Calendar onBack={() => setView('dashboard')} onOpenDay={handleOpenDay} />;
-  if (view === 'day') return <DailySchedule date={selectedDate} onBack={() => setView('calendar')} />;
+  // 🆕 Button menu
+  const menuItems = [
+    { key: 'chat', label: 'Spark 💬' },
+    { key: 'inbox', label: 'Inbox 📬' },
+    { key: 'calendar', label: 'Calendar 📆' },
+    { key: 'day', label: 'Daily Schedule 🗓️' },
+  ];
 
   return (
-    <div style={{
-      padding: '30px',
-      background: '#f4faff',
-      minHeight: '100vh',
-      fontFamily: 'Arial, sans-serif',
-      color: '#333'
-    }}>
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto',
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '25px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{ color: '#0077cc' }}>Welcome to SmartFlow</h2>
-        <p style={{ marginBottom: '20px' }}>
-          I’m Spark — your home comfort assistant. What can I help with today?
-        </p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <button onClick={() => setView('chat')} style={buttonStyle}>💬 Ask Spark</button>
-          <button onClick={() => setView('calendar')} style={buttonStyle}>📅 Calendar</button>
-          <button onClick={() => setView('inbox')} style={buttonStyle}>📨 Inbox</button>
-          <button onClick={onLogout} style={{ ...buttonStyle, backgroundColor: '#ddd' }}>🚪 Log Out</button>
-        </div>
+    <div style={{ fontFamily: 'sans-serif', padding: 20 }}>
+      {/* 🧭 Navigation bar */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        {menuItems.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            style={{
+              padding: '10px 16px',
+              border: 'none',
+              backgroundColor: view === key ? '#336699' : '#ddd',
+              color: view === key ? '#fff' : '#000',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+        {/* Optional logout button */}
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            style={{
+              marginLeft: 'auto',
+              padding: '10px 16px',
+              backgroundColor: '#cc0000',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            Logout
+          </button>
+        )}
       </div>
+
+      {/* 🔁 Conditional views */}
+      {view === 'chat' && <SparkChat userTier="pro" />}
+      {view === 'inbox' && <MessageInbox />}
+      {view === 'calendar' && <Calendar onOpenDay={handleOpenDay} />}
+      {view === 'day' && <DailySchedule date={selectedDate} />}
     </div>
   );
-};
-
-const buttonStyle = {
-  padding: '12px 20px',
-  fontSize: '16px',
-  border: 'none',
-  borderRadius: '8px',
-  backgroundColor: '#0077cc',
-  color: 'white',
-  cursor: 'pointer',
-  transition: 'background 0.2s'
 };
 
 export default HomeDashboard;
